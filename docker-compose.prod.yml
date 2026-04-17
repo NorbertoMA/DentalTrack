@@ -33,6 +33,7 @@ services:
         condition: service_healthy
     networks:
       - dentaltrack_net
+      - nginx-proxy_default
 
   frontend:
     build:
@@ -46,6 +47,7 @@ services:
       - backend
     networks:
       - dentaltrack_net
+      - nginx-proxy_default
 
 volumes:
   postgres_data:
@@ -56,3 +58,5 @@ volumes:
 networks:
   dentaltrack_net:
     driver: bridge
+  nginx-proxy_default:
+    external: true
