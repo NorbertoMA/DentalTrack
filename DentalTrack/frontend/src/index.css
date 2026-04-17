@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-dental-light text-gray-800 antialiased;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-dental-blue text-white font-semibold py-3 px-6 rounded-2xl
+           active:scale-95 transition-transform duration-150 w-full
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply bg-white text-dental-blue font-semibold py-3 px-6 rounded-2xl
+           border-2 border-dental-blue active:scale-95 transition-transform
+           duration-150 w-full;
+  }
+
+  .card {
+    @apply bg-white rounded-2xl shadow-sm p-4;
+  }
+
+  .input-field {
+    @apply bg-dental-light border border-gray-200 rounded-xl px-4 py-3 w-full
+           focus:outline-none focus:ring-2 focus:ring-dental-blue/40
+           text-base appearance-none;
+  }
+}
