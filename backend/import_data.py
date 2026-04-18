@@ -65,7 +65,7 @@ def import_from_csv(year: int, month: int, csv_text: str):
                     treatment = db.query(models.Catalog).get(treatment_id)
                     commission = treatment.commission_value * quantity
                     
-                    new_record = models.Record(
+                    new_record = models.DailyRecord(
                         date=record_date,
                         treatment_id=treatment_id,
                         quantity=quantity,
