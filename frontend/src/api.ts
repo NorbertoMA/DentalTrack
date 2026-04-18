@@ -50,7 +50,7 @@ function getAuthHeaders(): HeadersInit {
   return token ? { 'Authorization': `Bearer ${token}` } : {};
 }
 
-async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<Response> {
+export async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<Response> {
   const headers = {
     ...getAuthHeaders(),
     ...(options.headers || {}),

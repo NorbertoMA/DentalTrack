@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { api, DayReport, DayDetail, MonthReport, Treatment } from '../api'
+import { api, fetchWithAuth, DayReport, DayDetail, MonthReport, Treatment } from '../api'
 
 const MONTHS_NAMES = [
   '', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -121,7 +121,7 @@ export default function ReportsPage() {
   const handleExportPdf = async (monthYear: string) => {
     setExportingPdf(monthYear)
     try {
-      const res = await fetch(`/api/reports/export-month/${monthYear}`)
+      const res = await fetchWithAuth(`/api/reports/export-month/${monthYear}`)
       if (!res.ok) {
         const err = await res.json().catch(() => ({ detail: 'Error desconocido' }))
         alert(err.detail || 'Error al generar PDF')
