@@ -21,7 +21,18 @@ function isToday(d: Date) {
 export default function RecordPage() {
   const [catalog, setCatalog] = useState<Treatment[]>([])
   const [records, setRecords] = useState<RecordItem[]>([])
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date())
+  
+  // Función para obtener el día laborable más cercano (Lun-Jue)
+  const getNearestWorkingDay = (date: Date) => {
+    const d = new Date(date)
+    const day = d.getDay()
+    if (day === 5) d.setDate(d.getDate() + 3) // Viernes -> Lunes
+    else if (day === 6) d.setDate(d.getDate() + 2) // Sábado -> Lunes
+    else if (day === 0) d.setDate(d.getDate() + 1) // Domingo -> Lunes
+    return d
+  }
+
+  const [selectedDate, setSelectedDate] = useState<Date>(getNearestWorkingDay(new Date()))
 
   const [selectedTreatmentId, setSelectedTreatmentId] = useState<number | ''>('')
   const [quantity, setQuantity] = useState<number>(1)
@@ -53,12 +64,22 @@ export default function RecordPage() {
   const goDay = (offset: number) => {
     setSelectedDate(prev => {
       const d = new Date(prev)
-      d.setDate(d.getDate() + offset)
+      const currentDay = d.getDay()
+      
+      if (offset > 0) {
+        // Ir hacia adelante
+        if (currentDay === 4) d.setDate(d.getDate() + 4) // Jueves -> Lunes (+4)
+        else d.setDate(d.getDate() + 1)
+      } else {
+        // Ir hacia atrás
+        if (currentDay === 1) d.setDate(d.getDate() - 4) // Lunes -> Jueves (-4)
+        else d.setDate(d.getDate() - 1)
+      }
       return d
     })
   }
 
-  const goToday = () => setSelectedDate(new Date())
+  const goToday = () => setSelectedDate(getNearestWorkingDay(new Date()))
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
