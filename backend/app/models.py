@@ -34,3 +34,12 @@ class MonthlyReport(Base):
     month_year = Column(String(7), nullable=False, unique=True)  # Ej: "2024-06"
     file_path = Column(String(500), nullable=False)
     total_earned = Column(Float, nullable=False)
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String(100), unique=True, index=True, nullable=False)
+    hashed_password = Column(String(255), nullable=False)
+    is_active = Column(Boolean, default=True)

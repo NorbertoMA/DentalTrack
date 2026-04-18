@@ -43,7 +43,30 @@ export interface TreatmentReport {
   total_commission: number;
 }
 
-// ── API ──────────────────────────────────────────────────────────────────────
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+function getAuthHeaders(): HeadersInit {
+  const token = localStorage.getItem('token');
+  return token ? { 'Authorization': `Bearer ${token}` } : {};
+}
+
+async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<Response> {
+  const headers = {
+    ...getAuthHeaders(),
+    ...(options.headers || {}),
+  };
+  
+  const response = await fetch(url, { ...options, headers });
+  
+  if (response.status === 401) {
+    // Si recibimos 401, el token ha expirado o es inválido
+    localStorage.removeItem('token');
+    localStorage.removeItem('username');
+    window.location.href = '/login';
+  }
+  
+  return response;
+}
 
 export const CATALOG_ORDER = [
   'limpieza normal',
@@ -65,17 +88,19 @@ export function sortCatalog(catalog: Treatment[]): Treatment[] {
   });
 }
 
+// ── API ──────────────────────────────────────────────────────────────────────
+
 export const api = {
   // Catalog
   async fetchCatalog(): Promise<Treatment[]> {
-    const res = await fetch(`${API_BASE}/catalog/`);
+    const res = await fetchWithAuth(`${API_BASE}/catalog/`);
     if (!res.ok) throw new Error('Failed to fetch catalog');
     const data = await res.json();
     return sortCatalog(data);
   },
 
   async createTreatment(data: Omit<Treatment, 'id'>): Promise<Treatment> {
-    const res = await fetch(`${API_BASE}/catalog/`, {
+    const res = await fetchWithAuth(`${API_BASE}/catalog/`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
@@ -85,7 +110,7 @@ export const api = {
   },
 
   async updateTreatment(id: number, data: Partial<Treatment>): Promise<Treatment> {
-    const res = await fetch(`${API_BASE}/catalog/${id}`, {
+    const res = await fetchWithAuth(`${API_BASE}/catalog/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
@@ -96,19 +121,19 @@ export const api = {
 
   // Records
   async fetchTodayRecords(): Promise<RecordItem[]> {
-    const res = await fetch(`${API_BASE}/records/today`);
+    const res = await fetchWithAuth(`${API_BASE}/records/today`);
     if (!res.ok) throw new Error('Failed to fetch today records');
     return res.json();
   },
 
   async fetchRecordsByDate(date: string): Promise<RecordItem[]> {
-    const res = await fetch(`${API_BASE}/records/by-date?target_date=${date}`);
+    const res = await fetchWithAuth(`${API_BASE}/records/by-date?target_date=${date}`);
     if (!res.ok) throw new Error('Failed to fetch records by date');
     return res.json();
   },
 
   async createRecord(date: string, treatment_id: number, quantity: number): Promise<RecordItem> {
-    const res = await fetch(`${API_BASE}/records/`, {
+    const res = await fetchWithAuth(`${API_BASE}/records/`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ date, treatment_id, quantity }),
@@ -118,7 +143,7 @@ export const api = {
   },
 
   async deleteRecord(id: number): Promise<void> {
-    const res = await fetch(`${API_BASE}/records/${id}`, {
+    const res = await fetchWithAuth(`${API_BASE}/records/${id}`, {
       method: 'DELETE',
     });
     if (!res.ok) throw new Error('Failed to delete record');
@@ -130,19 +155,19 @@ export const api = {
     if (month !== undefined) params.set('month', String(month));
     if (year !== undefined) params.set('year', String(year));
     const qs = params.toString() ? `?${params.toString()}` : '';
-    const res = await fetch(`${API_BASE}/reports/by-day${qs}`);
+    const res = await fetchWithAuth(`${API_BASE}/reports/by-day${qs}`);
     if (!res.ok) throw new Error('Failed to fetch day report');
     return res.json();
   },
 
   async fetchDayDetail(date: string): Promise<DayDetail[]> {
-    const res = await fetch(`${API_BASE}/reports/day-detail?target_date=${date}`);
+    const res = await fetchWithAuth(`${API_BASE}/reports/day-detail?target_date=${date}`);
     if (!res.ok) throw new Error('Failed to fetch day detail');
     return res.json();
   },
 
   async fetchReportByMonth(): Promise<MonthReport[]> {
-    const res = await fetch(`${API_BASE}/reports/by-month`);
+    const res = await fetchWithAuth(`${API_BASE}/reports/by-month`);
     if (!res.ok) throw new Error('Failed to fetch month report');
     return res.json();
   },
@@ -152,7 +177,7 @@ export const api = {
     if (month !== undefined) params.set('month', String(month));
     if (year !== undefined) params.set('year', String(year));
     const qs = params.toString() ? `?${params.toString()}` : '';
-    const res = await fetch(`${API_BASE}/reports/by-treatment${qs}`);
+    const res = await fetchWithAuth(`${API_BASE}/reports/by-treatment${qs}`);
     if (!res.ok) throw new Error('Failed to fetch treatment report');
     return res.json();
   },
@@ -169,7 +194,7 @@ export const api = {
     if (month !== undefined) params.set('month', String(month));
     if (day_date) params.set('day_date', day_date);
 
-    const res = await fetch(`${API_BASE}/reports/treatment-records?${params.toString()}`);
+    const res = await fetchWithAuth(`${API_BASE}/reports/treatment-records?${params.toString()}`);
     if (!res.ok) throw new Error('Failed to fetch treatment detail records');
     return res.json();
   },

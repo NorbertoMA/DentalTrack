@@ -5,8 +5,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from app.database import engine, Base, SessionLocal
-from app import models
-from app.routers import catalog, records, reports
+from app import models, auth
+from app.routers import catalog, records, reports, auth as auth_router
 
 INITIAL_CATALOG = [
     {"name": "Limpieza Normal", "price": 60.0, "commission_value": 10.0},
@@ -36,6 +36,17 @@ async def lifespan(app: FastAPI):
     # Seed de datos iniciales
     db: Session = SessionLocal()
     try:
+        # Seed de usuario inicial
+        if db.query(models.User).filter(models.User.username == "estefania").count() == 0:
+            db.add(models.User(
+                username="estefania",
+                hashed_password=auth.get_password_hash("290182")
+            ))
+            db.commit()
+            print("✅ Usuario inicial 'estefania' creado")
+        else:
+            print("ℹ️  Usuario 'estefania' ya existe")
+
         if db.query(models.Catalog).count() == 0:
             for item in INITIAL_CATALOG:
                 db.add(models.Catalog(**item))
@@ -43,6 +54,7 @@ async def lifespan(app: FastAPI):
             print(f"✅ Catálogo inicial insertado: {len(INITIAL_CATALOG)} tratamientos")
         else:
             print(f"ℹ️  Catálogo ya tiene datos ({db.query(models.Catalog).count()} tratamientos)")
+
     except Exception as e:
         print(f"❌ Error seeding DB: {e}")
     finally:
@@ -66,6 +78,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth_router.router, prefix="/api/auth", tags=["Autenticación"])
 app.include_router(catalog.router, prefix="/api/catalog", tags=["Catálogo"])
 app.include_router(records.router, prefix="/api/records", tags=["Registros"])
 app.include_router(reports.router, prefix="/api/reports", tags=["Informes"])

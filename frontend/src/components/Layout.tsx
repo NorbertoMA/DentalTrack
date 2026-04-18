@@ -1,4 +1,5 @@
 import { Outlet, NavLink } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 
 const navItems = [
   { to: '/registro', label: 'Registro', icon: '📋' },
@@ -7,11 +8,19 @@ const navItems = [
 ]
 
 export default function Layout() {
+  const { logout } = useAuth();
+
   return (
     <div className="min-h-screen flex flex-col max-w-lg mx-auto">
       {/* Header */}
-      <header className="bg-dental-blue text-white px-4 py-4 shadow-md">
+      <header className="bg-dental-blue text-white px-4 py-4 shadow-md flex justify-between items-center">
         <h1 className="text-xl font-bold tracking-tight">🦷 DentalTrack</h1>
+        <button 
+          onClick={logout}
+          className="text-xs bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 border border-white/20"
+        >
+          <span>🚪</span> Cerrar sesión
+        </button>
       </header>
 
       {/* Content */}

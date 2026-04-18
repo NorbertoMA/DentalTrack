@@ -16,9 +16,9 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, 
 
 from app.database import get_db
 from app.config import settings
-from app import models
+from app import models, auth
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(auth.get_current_user)])
 
 MONTHS_ES = [
     "", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",

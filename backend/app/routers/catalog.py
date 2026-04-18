@@ -3,9 +3,9 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Optional
 from app.database import get_db
-from app import models
+from app import models, auth
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(auth.get_current_user)])
 
 
 # ── Schemas ──────────────────────────────────────────────────────────────────
