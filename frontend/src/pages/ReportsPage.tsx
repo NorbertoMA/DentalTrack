@@ -41,7 +41,7 @@ export default function ReportsPage() {
   const [loadingDetail, setLoadingDetail] = useState(false)
 
   // PDF export
-  const [exportingPdf, setExportingPdf] = useState<string | null>(null)
+  const [exportingPdf, setExportingPdf] = useState<{ monthYear: string; action: 'download' | 'share' } | null>(null)
 
   useEffect(() => {
     // Load catalog initially for the dropdowns
@@ -118,26 +118,52 @@ export default function ReportsPage() {
     }
   }
 
-  const handleExportPdf = async (monthYear: string) => {
-    setExportingPdf(monthYear)
+  const fetchPdfBlob = async (monthYear: string): Promise<Blob | null> => {
+    const res = await fetchWithAuth(`/api/reports/export-month/${monthYear}`)
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: 'Error desconocido' }))
+      alert(err.detail || 'Error al generar PDF')
+      return null
+    }
+    return res.blob()
+  }
+
+  const downloadBlob = (blob: Blob, monthYear: string) => {
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `DentalTrack_${monthYear}.pdf`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(url)
+  }
+
+  const handleDownloadPdf = async (monthYear: string) => {
+    setExportingPdf({ monthYear, action: 'download' })
     try {
-      const res = await fetchWithAuth(`/api/reports/export-month/${monthYear}`)
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ detail: 'Error desconocido' }))
-        alert(err.detail || 'Error al generar PDF')
-        return
-      }
-      const blob = await res.blob()
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `DentalTrack_${monthYear}.pdf`
-      document.body.appendChild(a)
-      a.click()
-      a.remove()
-      window.URL.revokeObjectURL(url)
-    } catch (err) {
+      const blob = await fetchPdfBlob(monthYear)
+      if (blob) downloadBlob(blob, monthYear)
+    } catch {
       alert('Error al descargar el PDF')
+    } finally {
+      setExportingPdf(null)
+    }
+  }
+
+  const handleSharePdf = async (monthYear: string) => {
+    setExportingPdf({ monthYear, action: 'share' })
+    try {
+      const blob = await fetchPdfBlob(monthYear)
+      if (!blob) return
+      const file = new File([blob], `DentalTrack_${monthYear}.pdf`, { type: 'application/pdf' })
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: `Informe ${formatMonthYear(monthYear)}` })
+      } else {
+        downloadBlob(blob, monthYear)
+      }
+    } catch (err: any) {
+      if (err?.name !== 'AbortError') alert('Error al compartir el PDF')
     } finally {
       setExportingPdf(null)
     }
@@ -383,25 +409,36 @@ export default function ReportsPage() {
                 </div>
                 <span className="font-bold text-dental-blue text-lg">{row.total_commission.toFixed(2)}€</span>
               </div>
-              <button
-                onClick={() => handleExportPdf(row.month_year)}
-                disabled={exportingPdf === row.month_year}
-                className="mt-3 w-full flex items-center justify-center gap-2
-                           bg-dental-blue/10 text-dental-blue text-sm font-semibold
-                           py-2 rounded-xl active:scale-95 transition-transform
-                           disabled:opacity-50 disabled:cursor-wait"
-              >
-                {exportingPdf === row.month_year ? (
-                  <>
-                    <span className="animate-spin inline-block w-4 h-4 border-2 border-dental-blue/30 border-t-dental-blue rounded-full" />
-                    Generando PDF...
-                  </>
-                ) : (
-                  <>
-                    📄 Exportar a PDF
-                  </>
-                )}
-              </button>
+              <div className="mt-3 flex gap-2">
+                <button
+                  onClick={() => handleDownloadPdf(row.month_year)}
+                  disabled={exportingPdf?.monthYear === row.month_year}
+                  className="flex-1 flex items-center justify-center gap-2
+                             bg-dental-blue/10 text-dental-blue text-sm font-semibold
+                             py-2 rounded-xl active:scale-95 transition-transform
+                             disabled:opacity-50 disabled:cursor-wait"
+                >
+                  {exportingPdf?.monthYear === row.month_year && exportingPdf.action === 'download' ? (
+                    <><span className="animate-spin inline-block w-4 h-4 border-2 border-dental-blue/30 border-t-dental-blue rounded-full" /> Generando...</>
+                  ) : (
+                    <>📄 Guardar PDF</>
+                  )}
+                </button>
+                <button
+                  onClick={() => handleSharePdf(row.month_year)}
+                  disabled={exportingPdf?.monthYear === row.month_year}
+                  className="flex-1 flex items-center justify-center gap-2
+                             bg-green-50 text-green-600 text-sm font-semibold
+                             py-2 rounded-xl active:scale-95 transition-transform
+                             disabled:opacity-50 disabled:cursor-wait"
+                >
+                  {exportingPdf?.monthYear === row.month_year && exportingPdf.action === 'share' ? (
+                    <><span className="animate-spin inline-block w-4 h-4 border-2 border-green-300 border-t-green-600 rounded-full" /> Compartiendo...</>
+                  ) : (
+                    <>📤 Compartir</>
+                  )}
+                </button>
+              </div>
             </div>
           ))}
 
